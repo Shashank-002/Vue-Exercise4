@@ -9,6 +9,7 @@
                     <span class="error-message" v-if="errors.email">{{ errors.email }}</span>
                 </div>
 
+                <!-- Password Field -->
                 <div>
                     <label for="password">Password:</label>
                     <input type="password" id="password" v-model="form.password" @input="validateField('password')" />
@@ -30,16 +31,28 @@
                     <label for="skills">Skills:</label>
                     <input type="text" id="skills" v-model="skillInput" @keyup.enter.prevent="addSkill"
                         @keyup="addSkillOnComma" placeholder="Add skills" />
-                    <div class="skills-container" v-if="form.skills.length">
+                    <div class="skills-container">
                         <div class="skills-grid">
                             <div v-for="(skill, index) in form.skills" :key="index" class="skills-inner-container">
-                                <div class="skill-badge">
+                                <!-- Show input only when editing this skill -->
+                                <div v-if="editingSkillIndex === index">
+                                    <input type="text" v-model="editingSkillInput"
+                                        @keyup.enter.prevent="updateSkill(index)"
+                                        @keyup="updateSkillOnComma(index, $event)" />
+                                </div>
+                                <!-- Show skill badge when not editing -->
+                                <div v-else class="skill-badge">
                                     <span>{{ skill }}</span>
-                                    <font-awesome-icon :icon="['far', 'pen-to-square']" />
-
+                                    <div class="icons">
+                                        <!-- Edit Skill -->
+                                        <font-awesome-icon :icon="['far', 'pen-to-square']" @click="editSkill(index)" />
+                                        <!-- Delete Skill -->
+                                        <font-awesome-icon :icon="['fas', 'trash']" @click="deleteSkill(index)" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Show error when no skills added -->
                         <span class="error-message" v-if="errors.skills">{{ errors.skills }}</span>
                     </div>
                 </div>
@@ -67,8 +80,6 @@
 </template>
 
 
-
-
 <script>
 export default {
     name: 'SignupForm',
@@ -82,20 +93,25 @@ export default {
                 terms: false,
             },
             skillInput: '',
+            editingSkillInput: '',
+            editingSkillIndex: null,
             errors: {},
             submitted: false,
         };
     },
     methods: {
+        addSkill(event) {
 
-        addSkill() {
+            if (event) event.preventDefault();
+
             const skill = this.skillInput.trim();
             if (skill && !this.form.skills.includes(skill)) {
                 this.form.skills.push(skill);
                 this.skillInput = '';
-                this.errors.skills = '';
             }
+            this.validateField('skills');
         },
+
 
         addSkillOnComma(event) {
             if (event.key === ',') {
@@ -104,20 +120,40 @@ export default {
             }
         },
 
-        removeSkill(index) {
-            this.form.skills.splice(index, 1);
-            if (this.form.skills.length === 0) {
-                this.errors.skills = 'At least one skill is required';
+        editSkill(index) {
+            this.editingSkillIndex = index;
+            this.editingSkillInput = this.form.skills[index];
+            this.skillInput = this.form.skills[index];
+        },
+
+
+        updateSkillOnComma(index, event) {
+            if (event.key === ',') {
+                event.preventDefault();
+                const updatedSkill = this.editingSkillInput.trim().replace(',', '');
+                if (updatedSkill) {
+                    this.updateSkill(index);
+                }
             }
         },
 
-        editSkill(index) {
-            this.skillInput = this.form.skills[index];
-            this.removeSkill(index);
+        updateSkill(index) {
+            const updatedSkill = this.editingSkillInput.trim().replace(',', '');
+            if (updatedSkill) {
+                this.form.skills[index] === updatedSkill;
+            }
+            this.editingSkillIndex = null;
+            this.editingSkillInput = '';
+        },
+
+
+        deleteSkill(index) {
+            this.form.skills.splice(index, 1);
+            this.validateField('skills');
         },
 
         validateField(field) {
-
+            // Email validation
             if (field === 'email') {
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!this.form.email) {
@@ -170,18 +206,17 @@ export default {
             }
         },
 
-        // Main validation for form submission
         validateForm() {
             this.errors = {};
 
-            // Validate each field
+            // Validate all fields
             this.validateField('email');
             this.validateField('password');
             this.validateField('role');
             this.validateField('skills');
             this.validateField('terms');
 
-            // Submit if no errors
+            // Check if there are no errors
             if (Object.keys(this.errors).length === 0 || Object.values(this.errors).every((error) => !error)) {
                 this.submitted = true;
             }
@@ -260,87 +295,52 @@ body {
 
 .skills-container {
     margin-bottom: 10px;
-    /* Add some spacing below the skills container */
 }
 
 .skills-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 15px;
-    /* Space between grid items */
 }
 
 .skills-inner-container {
     display: flex;
     flex-direction: column;
-    /* Stack badge and buttons vertically */
     align-items: center;
-    /* Center items horizontally */
 }
 
 .skill-badge {
-    position: relative;
     background-color: #f1f1f1;
     color: #333;
     border-radius: 5px;
     padding: 10px 15px;
-    /* Add some padding to badges */
     font-size: 17px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     width: 100%;
-    /* Make badges take full width of their container */
+    justify-content: space-between;
+    overflow: hidden;
 }
 
-.skill-button {
+.skill-badge span {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+.skill-badge .icons {
     display: flex;
-    flex-direction: row;
-    /* Align buttons in a row */
-    gap: 5px;
-    /* Space between buttons */
-    margin-top: 5px;
-    /* Add some space above buttons */
+    gap: 10px;
+    flex-shrink: 0;
 }
 
-.edit-skill,
-.remove-skill-btn {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
+.skill-badge .icons {
     cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease, transform 0.2s;
 }
-
-.edit-skill {
-    background-color: #007bff;
-    color: white;
-}
-
-.remove-skill-btn {
-    background-color: #dc3545;
-    color: white;
-}
-
-/* Hover effects */
-.edit-skill:hover {
-    background-color: #0056b3;
-}
-
-.remove-skill-btn:hover {
-    background-color: #c82333;
-}
-
-/* Hover effects */
-.edit-skill:hover {
-    background-color: #0056b3;
-}
-
-.remove-skill-btn:hover {
-    background-color: #c82333;
-}
-
 
 
 .check-box {
