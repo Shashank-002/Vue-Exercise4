@@ -1,80 +1,82 @@
 <template>
     <div>
-        <div class="signup-form">
-            <form @submit.prevent="validateForm">
-                <!-- Email Field -->
-                <div>
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" v-model="form.email" @input="validateField('email')" />
-                    <span class="error-message" v-if="errors.email">{{ errors.email }}</span>
-                </div>
+        <div class="outer-container">
+            <div class="signup-form">
+                <form @submit.prevent="validateForm" @keydown.enter.prevent>
+                    <!-- Email Field -->
+                    <div>
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" v-model="form.email" @input="validateField('email')" />
+                        <span class="error-message" v-if="errors.email">{{ errors.email }}</span>
+                    </div>
 
-                <!-- Password Field -->
-                <div>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" v-model="form.password" @input="validateField('password')" />
-                    <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
-                </div>
+                    <!-- Password Field -->
+                    <div>
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" v-model="form.password"
+                            @input="validateField('password')" />
+                        <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
+                    </div>
 
-                <!-- Role Selection -->
-                <div class="form-group">
-                    <label for="role">Role:</label>
-                    <select id="role" v-model="form.role" class="custom-select" @change="validateField('role')">
-                        <option value="Web Developer">Web Developer</option>
-                        <option value="Web Designer">Web Designer</option>
-                    </select>
-                    <span class="error-message" v-if="errors.role">{{ errors.role }}</span>
-                </div>
+                    <!-- Role Selection -->
+                    <div class="form-group">
+                        <label for="role">Role:</label>
+                        <select id="role" v-model="form.role" class="custom-select" @change="validateField('role')">
+                            <option value="Web Developer">Web Developer</option>
+                            <option value="Web Designer">Web Designer</option>
+                        </select>
+                        <span class="error-message" v-if="errors.role">{{ errors.role }}</span>
+                    </div>
 
-                <!-- Skills Input -->
-                <div>
-                    <label for="skills">Skills:</label>
-                    <input type="text" id="skills" v-model="skillInput" @keyup.enter.prevent="addSkill"
-                        @keyup="addSkillOnComma" placeholder="Add skills" />
-                    <div class="skills-container">
-                        <div class="skills-grid">
-                            <div v-for="(skill, index) in form.skills" :key="index" class="skills-inner-container">
-                                <!-- Show input only when editing this skill -->
-                                <div v-if="editingSkillIndex === index">
-                                    <input type="text" v-model="editingSkillInput"
-                                        @keyup.enter.prevent="updateSkill(index)"
-                                        @keyup="updateSkillOnComma(index, $event)" />
-                                </div>
-                                <!-- Show skill badge when not editing -->
-                                <div v-else class="skill-badge">
-                                    <span>{{ skill }}</span>
-                                    <div class="icons">
-                                        <!-- Edit Skill -->
-                                        <font-awesome-icon :icon="['far', 'pen-to-square']" @click="editSkill(index)" />
-                                        <!-- Delete Skill -->
-                                        <font-awesome-icon :icon="['fas', 'trash']" @click="deleteSkill(index)" />
+                    <!-- Skills Input -->
+                    <div>
+                        <label for="skills">Skills:</label>
+                        <div class="relative">
+                            <input type="text" id="skills" v-model="skillInput" @keyup.enter.prevent="addOrUpdateSkill"
+                                @keyup="addSkillOnComma" placeholder="Add skills" class="input-field-with-icon">
+
+                            <font-awesome-icon :icon="['fas', 'plus']" class="plus-icon" @click="addOrUpdateSkill" />
+                        </div>
+                        <div class="skills-container">
+                            <div class="skills-grid">
+                                <div v-for="(skill, index) in form.skills" :key="index" class="skills-inner-container">
+
+                                    <div v-if="editingSkillIndex !== index" class="skill-badge">
+                                        <span>{{ skill }}</span>
+                                        <div class="icons">
+                                            <!-- Edit Skill -->
+                                            <font-awesome-icon :icon="['far', 'pen-to-square']"
+                                                @click="editSkill(index)" />
+                                            <!-- Delete Skill -->
+                                            <font-awesome-icon :icon="['fas', 'trash']" @click="deleteSkill(index)" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- Show error when no skills added -->
+                            <span class="error-message" v-if="errors.skills">{{ errors.skills }}</span>
                         </div>
-                        <!-- Show error when no skills added -->
-                        <span class="error-message" v-if="errors.skills">{{ errors.skills }}</span>
                     </div>
-                </div>
 
-                <!-- Terms Checkbox -->
-                <div class="check-box">
-                    <input type="checkbox" v-model="form.terms" id="terms" @change="validateField('terms')" />
-                    <label for="terms">Accept Terms and Conditions</label>
-                </div>
-                <span class="error-message" v-if="errors.terms">{{ errors.terms }}</span>
+                    <!-- Terms Checkbox -->
+                    <div class="check-box">
+                        <input type="checkbox" v-model="form.terms" id="terms" @change="validateField('terms')" />
+                        <label for="terms">Accept Terms and Conditions</label>
+                    </div>
+                    <span class="error-message" v-if="errors.terms">{{ errors.terms }}</span>
 
-                <!-- Submit Button -->
-                <button class="form-submit-btn" type="submit">Create an Account</button>
-            </form>
+                    <!-- Submit Button -->
+                    <button class="form-submit-btn" type="button" @click="validateForm">Create an Account</button>
+                </form>
+            </div>
         </div>
 
         <!-- Display Submitted Data -->
         <div v-if="submitted" class="user-info">
             <h3>Submitted Data:</h3>
-            <p>Email: {{ form.email }}</p>
-            <p>Role: {{ form.role }}</p>
-            <p>Skills: {{ form.skills.join(', ') }}</p>
+            <p>Email: {{ submittedData.email }}</p>
+            <p>Role: {{ submittedData.role }}</p>
+            <p>Skills: {{ submittedData.skills.join(', ') }}</p>
         </div>
     </div>
 </template>
@@ -92,23 +94,29 @@ export default {
                 skills: [],
                 terms: false,
             },
+            submittedData: {},
             skillInput: '',
-            editingSkillInput: '',
             editingSkillIndex: null,
             errors: {},
             submitted: false,
         };
     },
     methods: {
-        addSkill(event) {
-
+        addOrUpdateSkill(event) {
             if (event) event.preventDefault();
 
             const skill = this.skillInput.trim();
-            if (skill && !this.form.skills.includes(skill)) {
+            if (this.editingSkillIndex !== null) {
+                // Update existing skill
+                if (skill && !this.form.skills.includes(skill)) {
+                    this.form.skills.splice(this.editingSkillIndex, 1, skill);
+                }
+                this.editingSkillIndex = null;
+            } else if (skill && !this.form.skills.includes(skill)) {
+                // Add new skill
                 this.form.skills.push(skill);
-                this.skillInput = '';
             }
+            this.skillInput = '';
             this.validateField('skills');
         },
 
@@ -116,7 +124,7 @@ export default {
         addSkillOnComma(event) {
             if (event.key === ',') {
                 this.skillInput = this.skillInput.replace(',', '');
-                this.addSkill();
+                this.addOrUpdateSkill();
             }
         },
 
@@ -219,6 +227,16 @@ export default {
             // Check if there are no errors
             if (Object.keys(this.errors).length === 0 || Object.values(this.errors).every((error) => !error)) {
                 this.submitted = true;
+
+                this.submittedData = { ...this.form };
+                this.form = {
+                    email: '',
+                    password: '',
+                    role: '',
+                    skills: [],
+                    terms: false,
+                };
+                this.skillInput = '';
             }
         },
     },
@@ -235,11 +253,16 @@ export default {
 }
 
 body {
-    background-color: #f1f1f1;
+    background-color: white;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: baseline;
+}
+
+.outer-container {
+    background-color: #EDEDED;
+    padding: 10px;
 }
 
 .signup-form {
@@ -295,11 +318,31 @@ body {
 
 .skills-container {
     margin-bottom: 10px;
+
+}
+
+.input-field-with-icon {
+    padding-right: 2rem;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+.relative {
+    position: relative;
+}
+
+.fa-plus {
+    position: absolute;
+    right: 3px;
+    top: 35%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #555;
 }
 
 .skills-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 15px;
 }
 
@@ -388,7 +431,7 @@ body {
 }
 
 .user-info {
-    max-width: 400px;
+    max-width: 100%;
     margin: 20px auto;
     padding: 20px;
     background-color: #fff;
@@ -419,13 +462,23 @@ body {
     margin-top: 20px;
 }
 
+@media (max-width:575px) {
+    .signup-form {
+        width: 360px;
+    }
+
+    .form-submit-btn {
+        font-size: 14px;
+    }
+}
+
 @media (max-width:425px) {
     .signup-form {
         width: 340px;
     }
 
     .form-submit-btn {
-        font-size: 14px;
+        font-size: 13px;
     }
 }
 
@@ -437,11 +490,15 @@ body {
     .form-submit-btn {
         font-size: 12px;
     }
+
+    .user-info {
+        width: 93%;
+    }
 }
 
 @media (min-width:1600px) {
     .signup-form {
-        width: 500px;
+        width: 600px;
     }
 
     .form-submit-btn {
@@ -449,7 +506,7 @@ body {
     }
 
     .user-info {
-        max-width: 500px;
+        max-width: 100%;
     }
 
 }
