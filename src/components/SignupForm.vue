@@ -75,6 +75,7 @@
         <div v-if="submitted" class="user-info">
             <h3>Submitted Data:</h3>
             <p>Email: {{ submittedData.email }}</p>
+            <p>Password: {{ maskPassword(submittedData.password) }}</p>
             <p>Role: {{ submittedData.role }}</p>
             <p>Skills: {{ submittedData.skills.join(', ') }}</p>
         </div>
@@ -102,6 +103,10 @@ export default {
         };
     },
     methods: {
+
+        maskPassword(password) {
+            return '*'.repeat(password.length);
+        },
         addOrUpdateSkill(event) {
             if (event) event.preventDefault();
 
@@ -160,6 +165,7 @@ export default {
             this.validateField('skills');
         },
 
+
         validateField(field) {
             // Email validation
             if (field === 'email') {
@@ -215,6 +221,11 @@ export default {
         },
 
         validateForm() {
+
+            if (this.editingSkillIndex !== null) {
+                this.errors.skills = 'Please press Enter or comma to confirm the edited skill.';
+                return;
+            }
             this.errors = {};
 
             // Validate all fields
@@ -314,6 +325,10 @@ body {
 
 .signup-form input:focus {
     border-bottom: 2px solid #007bff;
+}
+
+.custom-select {
+    max-width: 100%;
 }
 
 .skills-container {
